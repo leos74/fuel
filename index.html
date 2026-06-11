@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost per 100km</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&f[]=jet-brains-mono@400,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#e80e0e;--red-dim:#b00b0b;--red-glow:rgba(232,14,14,0.18);
+  --green:#1adb6d;--green-dim:#0fa84e;--green-glow:rgba(26,219,109,0.15);
+  --bg:#0c0c0d;--surface:#131315;--surface-2:#1a1a1d;--surface-3:#222226;
+  --border:rgba(255,255,255,0.07);--border-mid:rgba(255,255,255,0.12);
+  --text:#f0eff0;--text-muted:#8a8990;--text-faint:#4a494f;
+  --font-body:'Cabinet Grotesk','Helvetica Neue',sans-serif;
+  --font-mono:'JetBrains Mono','Courier New',monospace;
+  --radius-sm:6px;--radius-md:12px;--radius-lg:18px;--radius-xl:24px;
+  --ease-out:cubic-bezier(0.16,1,0.3,1);--ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+[data-theme="light"]{
+  --bg:#f2f1ee;--surface:#fafaf8;--surface-2:#f5f4f1;--surface-3:#eeecea;
+  --border:rgba(0,0,0,0.07);--border-mid:rgba(0,0,0,0.13);
+  --text:#1a191e;--text-muted:#6b6a70;--text-faint:#b0aeb8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:none}
+body{
+  min-height:100dvh;font-family:var(--font-body);
+  font-size:clamp(1rem,0.95rem + 0.25vw,1.125rem);
+  color:var(--text);background:var(--bg);line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+input,button{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%,rgba(232,14,14,0.07) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 90%,rgba(26,219,109,0.05) 0%,transparent 65%),
+    repeating-linear-gradient(-45deg,transparent,transparent 40px,rgba(255,255,255,0.012) 40px,rgba(255,255,255,0.012) 41px);
+}
+[data-theme="light"] body::before{
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%,rgba(232,14,14,0.06) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 90%,rgba(26,219,109,0.05) 0%,transparent 65%),
+    repeating-linear-gradient(-45deg,transparent,transparent 40px,rgba(0,0,0,0.018) 40px,rgba(0,0,0,0.018) 41px);
+}
+.page{position:relative;z-index:1}
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px 0;max-width:900px;margin:0 auto;
+  opacity:0;animation:fadeSlideDown 0.6s var(--ease-out) 0.1s forwards;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  width:34px;height:34px;background:var(--red);border-radius:var(--radius-sm);
+  display:grid;place-items:center;font-size:15px;color:#fff;flex-shrink:0;
+  box-shadow:0 0 16px var(--red-glow);
+}
+.logo-text{
+  font-size:clamp(0.875rem,0.8rem + 0.35vw,1rem);font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);
+}
+.theme-toggle{
+  width:38px;height:38px;border-radius:var(--radius-md);
+  background:var(--surface-2);border:1px solid var(--border);
+  display:grid;place-items:center;color:var(--text-muted);font-size:15px;
+  transition:all 180ms var(--ease-out);
+}
+.theme-toggle:hover{color:var(--text);background:var(--surface-3)}
+main{max-width:900px;margin:0 auto;padding:32px 16px 48px}
+.hero{
+  text-align:center;margin-bottom:40px;
+  opacity:0;animation:fadeSlideDown 0.6s var(--ease-out) 0.2s forwards;
+}
+.hero h1{
+  font-size:clamp(1.5rem,1.2rem + 1.5vw,2.4rem);font-weight:900;
+  letter-spacing:-0.02em;line-height:1.1;color:var(--text);margin-bottom:8px;
+}
+.hero h1 span{color:var(--red)}
+.hero p{
+  font-size:clamp(0.875rem,0.8rem + 0.35vw,1rem);color:var(--text-muted);
+  max-width:42ch;margin:0 auto;
+}
+.cards-wrap{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px}
+@media(min-width:640px){.cards-wrap{grid-template-columns:1fr 1fr}}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-xl);padding:24px;position:relative;overflow:hidden;
+  opacity:0;
+  transition:border-color 400ms var(--ease-out),box-shadow 400ms var(--ease-out),background 400ms var(--ease-out);
+}
+.card:nth-child(1){animation:fadeSlideUp 0.6s var(--ease-out) 0.35s forwards}
+.card:nth-child(2){animation:fadeSlideUp 0.6s var(--ease-out) 0.48s forwards}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--border-mid);transition:background 400ms var(--ease-out);
+}
+.card.winner{
+  border-color:rgba(26,219,109,0.35);
+  box-shadow:0 0 0 1px rgba(26,219,109,0.1),0 8px 32px rgba(26,219,109,0.08);
+  background:linear-gradient(160deg,var(--surface) 0%,rgba(26,219,109,0.04) 100%);
+}
+.card.winner::before{background:var(--green);box-shadow:0 0 12px var(--green-glow)}
+.card.loser{
+  border-color:rgba(232,14,14,0.3);
+  box-shadow:0 0 0 1px rgba(232,14,14,0.08),0 8px 32px rgba(232,14,14,0.06);
+  background:linear-gradient(160deg,var(--surface) 0%,rgba(232,14,14,0.04) 100%);
+}
+.card.loser::before{background:var(--red);box-shadow:0 0 12px var(--red-glow)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.card-type{display:flex;align-items:center;gap:10px}
+.card-icon{
+  width:38px;height:38px;border-radius:var(--radius-md);background:var(--surface-3);
+  display:grid;place-items:center;font-size:15px;color:var(--text-muted);
+  border:1px solid var(--border);flex-shrink:0;transition:all 400ms var(--ease-out);
+}
+.card.winner .card-icon{background:rgba(26,219,109,0.1);color:var(--green);border-color:rgba(26,219,109,0.3)}
+.card.loser .card-icon{background:rgba(232,14,14,0.1);color:var(--red);border-color:rgba(232,14,14,0.25)}
+.type-input{
+  background:transparent;border:none;outline:none;font-family:var(--font-body);
+  font-size:clamp(0.875rem,0.8rem + 0.35vw,1rem);font-weight:700;color:var(--text);
+  width:110px;letter-spacing:0.01em;
+}
+.type-input::placeholder{color:var(--text-faint)}
+.winner-badge{
+  display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;color:var(--green);
+  background:rgba(26,219,109,0.1);border:1px solid rgba(26,219,109,0.25);
+  border-radius:9999px;padding:4px 10px;
+  opacity:0;transform:scale(0.85);pointer-events:none;
+  transition:opacity 300ms var(--ease-out),transform 300ms var(--ease-spring);
+}
+.card.winner .winner-badge{opacity:1;transform:scale(1)}
+.fields{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)}
+.input-wrap{position:relative;display:flex;align-items:center}
+.input-wrap i{
+  position:absolute;left:12px;font-size:12px;color:var(--text-faint);
+  pointer-events:none;transition:color 400ms var(--ease-out);
+}
+.card.winner .input-wrap i{color:var(--green-dim)}
+.card.loser .input-wrap i{color:var(--red-dim)}
+.field input[type="number"]{
+  width:100%;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:10px 44px 10px 32px;
+  font-family:var(--font-mono);font-size:clamp(0.875rem,0.8rem + 0.35vw,1rem);
+  color:var(--text);outline:none;
+  transition:border-color 180ms var(--ease-out),box-shadow 180ms var(--ease-out);
+  -moz-appearance:textfield;
+}
+.field input[type="number"]::-webkit-inner-spin-button,
+.field input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
+.field input[type="number"]:focus{border-color:var(--border-mid);box-shadow:0 0 0 3px rgba(255,255,255,0.04)}
+.card.winner .field input[type="number"]:focus{border-color:rgba(26,219,109,0.4);box-shadow:0 0 0 3px rgba(26,219,109,0.07)}
+.card.loser .field input[type="number"]:focus{border-color:rgba(232,14,14,0.35);box-shadow:0 0 0 3px rgba(232,14,14,0.06)}
+.unit{position:absolute;right:12px;font-size:11px;font-weight:700;letter-spacing:0.05em;color:var(--text-faint);pointer-events:none}
+.result-block{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+  transition:all 400ms var(--ease-out);
+}
+.card.winner .result-block{background:rgba(26,219,109,0.06);border-color:rgba(26,219,109,0.2)}
+.card.loser .result-block{background:rgba(232,14,14,0.06);border-color:rgba(232,14,14,0.15)}
+.result-label{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)}
+.result-value{
+  font-family:var(--font-mono);font-size:clamp(1.4rem,1rem + 1.5vw,1.9rem);
+  font-weight:700;color:var(--text-muted);letter-spacing:-0.02em;
+  transition:color 400ms var(--ease-out);
+}
+.card.winner .result-value{color:var(--green);text-shadow:0 0 24px var(--green-glow)}
+.card.loser .result-value{color:var(--red)}
+.comparison-section{opacity:0;animation:fadeSlideUp 0.6s var(--ease-out) 0.6s forwards}
+.bar-container{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-xl);padding:24px;
+}
+.bar-labels{display:flex;justify-content:space-between;margin-bottom:10px}
+.bar-label{
+  font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--text-faint);transition:color 400ms var(--ease-out);
+}
+.bar-label.active-left,.bar-label.active-right{color:var(--green)}
+.bar-track{
+  position:relative;height:10px;border-radius:9999px;overflow:visible;
+  margin-bottom:10px;background:var(--surface-3);
+}
+.bar-fill-left{
+  position:absolute;left:0;top:0;bottom:0;border-radius:9999px 0 0 9999px;
+  background:var(--red);opacity:0.5;transition:width 500ms var(--ease-out);
+}
+.bar-fill-right{
+  position:absolute;right:0;top:0;bottom:0;border-radius:0 9999px 9999px 0;
+  background:var(--green);opacity:0.5;transition:width 500ms var(--ease-out);
+}
+.bar-thumb{
+  position:absolute;top:50%;width:22px;height:22px;border-radius:50%;
+  background:var(--text);border:3px solid var(--bg);
+  box-shadow:0 2px 12px rgba(0,0,0,0.4);
+  transform:translate(-50%,-50%);left:50%;z-index:2;
+  transition:left 500ms var(--ease-out),background 400ms var(--ease-out),box-shadow 400ms var(--ease-out);
+}
+.bar-thumb.winner-left,.bar-thumb.winner-right{
+  background:var(--green);
+  box-shadow:0 0 0 3px rgba(26,219,109,0.25),0 2px 12px rgba(0,0,0,0.4);
+}
+.bar-endpoints{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)}
+.savings-row{
+  margin-top:16px;display:flex;align-items:center;justify-content:center;
+  gap:8px;min-height:26px;flex-wrap:wrap;
+}
+.savings-text{
+  font-size:clamp(0.875rem,0.8rem + 0.35vw,1rem);font-weight:700;
+  color:var(--text-faint);text-align:center;
+  transition:color 400ms var(--ease-out);letter-spacing:0.01em;
+}
+.savings-text.has-winner{color:var(--green)}
+.savings-amount{
+  font-family:var(--font-mono);font-size:clamp(1rem,0.9rem + 0.5vw,1.25rem);
+  font-weight:700;color:var(--green);opacity:0;
+  transition:opacity 400ms var(--ease-out);
+}
+.savings-amount.visible{opacity:1}
+.edge-row{margin-top:6px;display:flex;justify-content:center;min-height:22px}
+.edge-text{
+  font-size:clamp(0.8rem,0.76rem + 0.22vw,0.92rem);
+  color:var(--text-muted);
+  text-align:center;
+  letter-spacing:0.01em;
+  transition:color 400ms var(--ease-out), opacity 400ms var(--ease-out);
+  opacity:0.92;
+}
+footer{
+  text-align:center;padding:0 16px 32px;font-size:12px;color:var(--text-faint);
+  letter-spacing:0.04em;opacity:0;
+  animation:fadeSlideDown 0.6s var(--ease-out) 0.8s forwards;
+}
+@keyframes fadeSlideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.01ms !important}}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:var(--radius-sm)}
+::selection{background:var(--red-glow);color:var(--text)}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="logo">
+    <div class="logo-mark"><i class="fa-solid fa-gauge-high"></i></div>
+    <span class="logo-text">TDI advantage calculator</span>
+  </div>
+  <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+    <i class="fa-solid fa-moon"></i>
+  </button>
+</header>
+<main>
+  <div class="hero">
+    <h1>Cost per <span>100 km</span></h1>
+    <p>These days, prices really make no sense. See who wins with this simple calculator!</p>
+  </div>
+  <div class="cards-wrap">
+    <div class="card" id="card1">
+      <div class="card-header">
+        <div class="card-type">
+          <div class="card-icon"><i class="fa-solid fa-gas-pump"></i></div>
+          <input class="type-input" id="label1" type="text" value="Gasoline" aria-label="Vehicle 1 fuel type" placeholder="Fuel type" maxlength="14">
+        </div>
+        <div class="winner-badge"><i class="fa-solid fa-trophy"></i>&nbsp;Best value</div>
+      </div>
+      <div class="fields">
+        <div class="field">
+          <label for="price1">Fuel Price</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-dollar-sign"></i>
+            <input type="number" id="price1" placeholder="0.000" step="0.001" min="0" aria-label="Price per liter for vehicle 1">
+            <span class="unit">$ / L</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cons1">Consumption</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <input type="number" id="cons1" placeholder="0.0" step="0.1" min="0" aria-label="Consumption L/100km for vehicle 1">
+            <span class="unit">L / 100km</span>
+          </div>
+        </div>
+      </div>
+      <div class="result-block">
+        <span class="result-label">Cost / 100 km</span>
+        <span class="result-value" id="result1">—</span>
+      </div>
+    </div>
+    <div class="card" id="card2">
+      <div class="card-header">
+        <div class="card-type">
+          <div class="card-icon"><i class="fa-solid fa-droplet"></i></div>
+          <input class="type-input" id="label2" type="text" value="Diesel" aria-label="Vehicle 2 fuel type" placeholder="Fuel type" maxlength="14">
+        </div>
+        <div class="winner-badge"><i class="fa-solid fa-trophy"></i>&nbsp;Best value</div>
+      </div>
+      <div class="fields">
+        <div class="field">
+          <label for="price2">Fuel Price</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-dollar-sign"></i>
+            <input type="number" id="price2" placeholder="0.000" step="0.001" min="0" aria-label="Price per liter for vehicle 2">
+            <span class="unit">$ / L</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cons2">Consumption</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <input type="number" id="cons2" placeholder="0.0" step="0.1" min="0" aria-label="Consumption L/100km for vehicle 2">
+            <span class="unit">L / 100km</span>
+          </div>
+        </div>
+      </div>
+      <div class="result-block">
+        <span class="result-label">Cost / 100 km</span>
+        <span class="result-value" id="result2">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="comparison-section">
+    <div class="bar-container">
+      <div class="bar-labels">
+        <span class="bar-label" id="barLabel1">Gasoline</span>
+        <span class="bar-label" id="barLabel2">Diesel</span>
+      </div>
+      <div class="bar-track" id="barTrack">
+        <div class="bar-fill-left" id="barLeft" style="width:50%"></div>
+        <div class="bar-fill-right" id="barRight" style="width:50%"></div>
+        <div class="bar-thumb" id="barThumb"></div>
+      </div>
+      <div class="bar-endpoints">
+        <span id="barVal1">—</span>
+        <span id="barVal2">—</span>
+      </div>
+      <div class="savings-row">
+        <span class="savings-text" id="savingsText">Enter values to compare</span>
+        <span class="savings-amount" id="savingsAmount"></span>
+      </div>
+      <div class="edge-row">
+        <span class="edge-text" id="edgeText"></span>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>Cheese &nbsp;·&nbsp; Fromage &nbsp;·&nbsp; Сыр</footer>
+</div>
+<script>
+(function(){
+  var html=document.documentElement,toggle=document.querySelector('[data-theme-toggle]'),icon=toggle.querySelector('i'),theme='dark';
+  function applyTheme(t){theme=t;html.setAttribute('data-theme',t);icon.className=t==='dark'?'fa-solid fa-moon':'fa-solid fa-sun';toggle.setAttribute('aria-label','Switch to '+(t==='dark'?'light':'dark')+' mode');}
+  applyTheme(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  toggle.addEventListener('click',function(){applyTheme(theme==='dark'?'light':'dark');});
+  var p1=document.getElementById('price1'),c1=document.getElementById('cons1'),p2=document.getElementById('price2'),c2=document.getElementById('cons2');
+  var l1=document.getElementById('label1'),l2=document.getElementById('label2');
+  var r1=document.getElementById('result1'),r2=document.getElementById('result2');
+  var card1=document.getElementById('card1'),card2=document.getElementById('card2');
+  var bL=document.getElementById('barLeft'),bR=document.getElementById('barRight'),bT=document.getElementById('barThumb');
+  var bl1=document.getElementById('barLabel1'),bl2=document.getElementById('barLabel2');
+  var bv1=document.getElementById('barVal1'),bv2=document.getElementById('barVal2');
+  var st=document.getElementById('savingsText'),sa=document.getElementById('savingsAmount'),et=document.getElementById('edgeText');
+  function fmt(v){return'$'+v.toFixed(2);}
+  function recalc(){
+    var pv1=parseFloat(p1.value),cv1=parseFloat(c1.value),pv2=parseFloat(p2.value),cv2=parseFloat(c2.value);
+    var cost1=(isFinite(pv1)&&isFinite(cv1)&&pv1>0&&cv1>0)?pv1*cv1:null;
+    var cost2=(isFinite(pv2)&&isFinite(cv2)&&pv2>0&&cv2>0)?pv2*cv2:null;
+    r1.textContent=cost1!==null?fmt(cost1):'—';
+    r2.textContent=cost2!==null?fmt(cost2):'—';
+    bv1.textContent=cost1!==null?fmt(cost1):'—';
+    bv2.textContent=cost2!==null?fmt(cost2):'—';
+    bl1.textContent=l1.value||'Car 1';
+    bl2.textContent=l2.value||'Car 2';
+    card1.classList.remove('winner','loser');card2.classList.remove('winner','loser');
+    bl1.classList.remove('active-left','active-right');bl2.classList.remove('active-left','active-right');
+    bT.classList.remove('winner-left','winner-right');
+    st.classList.remove('has-winner');sa.classList.remove('visible');sa.textContent='';et.textContent='';
+    if(cost1===null||cost2===null){bL.style.width='50%';bR.style.width='50%';bT.style.left='50%';st.textContent='Enter values to compare';return;}
+    var total=cost1+cost2,pos=cost1/total,pct=(pos*100).toFixed(1);
+    bL.style.width=pct+'%';bR.style.width=(100-pos*100).toFixed(1)+'%';bT.style.left=pct+'%';
+    var sav=Math.abs(cost1-cost2),n1=l1.value||'Car 1',n2=l2.value||'Car 2';
+    if(cost1<cost2){
+      card1.classList.add('winner');card2.classList.add('loser');bl1.classList.add('active-left');bT.classList.add('winner-left');
+      st.classList.add('has-winner');st.textContent=n1+' saves ';sa.textContent=fmt(sav)+' / 100km';sa.classList.add('visible');
+      var neededDrop2=(cost2-cost1)/cv2;
+      et.textContent=n2+' should cost '+fmt(neededDrop2)+' less per liter to compete';
+    }
+    else if(cost2<cost1){
+      card2.classList.add('winner');card1.classList.add('loser');bl2.classList.add('active-right');bT.classList.add('winner-right');
+      st.classList.add('has-winner');st.textContent=n2+' saves ';sa.textContent=fmt(sav)+' / 100km';sa.classList.add('visible');
+      var neededDrop1=(cost1-cost2)/cv1;
+      et.textContent=n1+' should cost '+fmt(neededDrop1)+' less per liter to compete';
+    }
+    else{st.textContent='Both cars cost the same';et.textContent='At current consumption, both fuel choices are perfectly even';}
+  }
+  [p1,c1,p2,c2,l1,l2].forEach(function(el){el.addEventListener('input',recalc);});
+  recalc();
+})();
+</script>
+</body>
+</html>
